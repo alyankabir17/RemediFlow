@@ -150,6 +150,20 @@ export async function updateOrderStatus(id: string, data: UpdateOrderStatusInput
 
   // If confirming order, check stock and create sale
   if (data.status === 'CONFIRMED' && order.status !== 'CONFIRMED') {
+    // Check if a sale already exists (in case re-confirming a previously confirmed order)
+    if (order.sale) {
+      // Sale already exists, just update order status
+      const updatedOrder = await prisma.order.update({
+        where: { id },
+        data: { status: data.status },
+        include: {
+          product: true,
+          sale: true,
+        },
+      });
+      return updatedOrder;
+    }
+
     // Check if sufficient stock exists
     const hasStock = await hasSufficientStock(order.productId, order.quantity);
 

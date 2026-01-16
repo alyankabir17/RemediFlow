@@ -196,12 +196,11 @@ export function createApiResponse<T>(data: T, success: boolean = true, message?:
 
 // Status progression helper
 export const statusProgression: Record<OrderStatus, OrderStatus[]> = {
-  pending: ['confirmed', 'cancelled'],
-  confirmed: ['processing', 'cancelled'],
-  processing: ['shipped', 'cancelled'],
-  shipped: ['delivered'],
-  delivered: [],
-  cancelled: [],
+  PENDING: ['CONFIRMED', 'CANCELLED'],
+  CONFIRMED: ['SHIPPED', 'CANCELLED'],
+  SHIPPED: ['DELIVERED'],
+  DELIVERED: [],
+  CANCELLED: [],
 };
 
 // Export all for easy importing

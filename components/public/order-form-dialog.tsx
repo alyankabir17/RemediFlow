@@ -42,7 +42,7 @@ export function OrderFormDialog({ product, open, onClose }: OrderFormDialogProps
   const form = useForm<OrderFormValues>({
     resolver: zodResolver(orderFormSchema),
     defaultValues: {
-      fullName: '',
+      customerName: '',
       email: '',
       phone: '',
       address: '',

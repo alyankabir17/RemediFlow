@@ -1,0 +1,133 @@
+// RemedyFlow Database Schema
+// Stock is NEVER stored - it's calculated as: Total Purchases - Total Confirmed Sales
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Admin Users (for authentication)
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String   // Hashed password
+  role      String   @default("ADMIN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+// Products
+model Product {
+  id            String    @id @default(cuid())
+  name          String
+  description   String    @db.Text
+  category      String
+  potency       String
+  form          String    // Tablet, Capsule, Syrup, etc.
+  manufacturer  String
+  batchNumber   String?
+  expiryDate    DateTime?
+  sellingPrice  Float     // Price shown to customers
+  purchasePrice Float     // Cost price (NEVER exposed to public)
+  image         String
+  isActive      Boolean   @default(true) // Soft delete
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  orders    Order[]
+  purchases Purchase[]
+  sales     Sale[]
+
+  @@index([isActive])
+  @@index([category])
+  @@index([expiryDate])
+  @@map("products")
+}
+
+// Customer Orders (Public - no authentication required)
+model Order {
+  id           String      @id @default(cuid())
+  orderNumber  String      @unique @default(cuid())
+  customerName String
+  email        String
+  phone        String
+  address      String      @db.Text
+  productId    String
+  quantity     Int
+  notes        String?     @db.Text
+  status       OrderStatus @default(PENDING)
+  totalAmount  Float       // Stored for historical accuracy
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  // Relations
+  product Product @relation(fields: [productId], references: [id])
+  sale    Sale?   // One order can generate one sale when confirmed
+
+  @@index([status])
+  @@index([productId])
+  @@index([email])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+// Purchase Records (Admin only)
+// Purchases INCREASE stock
+model Purchase {
+  id            String   @id @default(cuid())
+  productId     String
+  quantity      Int
+  purchasePrice Float
+  supplier      String?
+  notes         String?  @db.Text
+  purchaseDate  DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([productId])
+  @@index([purchaseDate])
+  @@map("purchases")
+}
+
+// Sales Records (Generated from confirmed orders OR manual entry)
+// Sales DECREASE stock
+model Sale {
+  id         String   @id @default(cuid())
+  productId  String
+  quantity   Int
+  salePrice  Float
+  orderId    String?  @unique // Linked if from order
+  notes      String?  @db.Text
+  saleDate   DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  product Product @relation(fields: [productId], references: [id])
+  order   Order?  @relation(fields: [orderId], references: [id])
+
+  @@index([productId])
+  @@index([saleDate])
+  @@index([orderId])
+  @@map("sales")
+}
+
+// Order Status Enum
+enum OrderStatus {
+  PENDING   // Order placed, not yet confirmed
+  CONFIRMED // Order confirmed, sale created, stock deducted
+  CANCELLED // Order cancelled, no stock impact
+  SHIPPED   // Order shipped
+  DELIVERED // Order delivered
+}

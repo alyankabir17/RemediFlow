@@ -18,11 +18,12 @@ console.log('📧 EmailJS Configuration:', {
 });
 
 // Template IDs for different email types
+// Falls back to main template if specific templates are not set
 const EMAIL_TEMPLATES = {
-  ORDER_CONFIRMED: process.env.EMAILJS_TEMPLATE_CONFIRMED || '',
-  ORDER_CANCELLED: process.env.EMAILJS_TEMPLATE_CANCELLED || '',
-  ORDER_SHIPPED: process.env.EMAILJS_TEMPLATE_SHIPPED || '',
-  ORDER_DELIVERED: process.env.EMAILJS_TEMPLATE_DELIVERED || '',
+  ORDER_CONFIRMED: process.env.EMAILJS_TEMPLATE_CONFIRMED || process.env.EMAILJS_TEMPLATE_ID || '',
+  ORDER_CANCELLED: process.env.EMAILJS_TEMPLATE_CANCELLED || process.env.EMAILJS_TEMPLATE_ID || '',
+  ORDER_SHIPPED: process.env.EMAILJS_TEMPLATE_SHIPPED || process.env.EMAILJS_TEMPLATE_ID || '',
+  ORDER_DELIVERED: process.env.EMAILJS_TEMPLATE_DELIVERED || process.env.EMAILJS_TEMPLATE_ID || '',
 };
 
 console.log('📧 Email Templates:', {
@@ -49,28 +50,32 @@ interface OrderEmailData {
 export async function sendOrderConfirmedEmail(data: OrderEmailData): Promise<void> {
   console.log('📧 Attempting to send confirmation email to:', data.email);
   console.log('📧 Using template:', EMAIL_TEMPLATES.ORDER_CONFIRMED);
-  console.log('📧 Email data:', {
-    to_email: data.email,
-    to_name: data.customerName,
-    order_number: data.orderNumber,
-    product_name: data.productName,
-    quantity: data.quantity,
-    total_amount: data.totalAmount.toFixed(2),
-  });
+  
+  // Match EmailJS template structure
+  const emailData = {
+    email: data.email,  // To Email field
+    order_id: data.orderNumber,  // Order ID in subject
+    orders: [
+      {
+        name: data.productName,
+        units: data.quantity,
+        price: data.totalAmount.toFixed(2),
+      }
+    ],
+    cost: {
+      shipping: '0.00',
+      tax: '0.00',
+      total: data.totalAmount.toFixed(2),
+    }
+  };
+  
+  console.log('📧 Email data:', emailData);
   
   try {
     const response = await emailjs.send(
       EMAILJS_SERVICE_ID,
       EMAIL_TEMPLATES.ORDER_CONFIRMED,
-      {
-        to_email: data.email,
-        to_name: data.customerName,
-        order_number: data.orderNumber,
-        product_name: data.productName,
-        quantity: data.quantity,
-        total_amount: data.totalAmount.toFixed(2),
-        status: 'Confirmed',
-      },
+      emailData,
       {
         publicKey: EMAILJS_PUBLIC_KEY,
         privateKey: EMAILJS_PRIVATE_KEY,
@@ -97,13 +102,20 @@ export async function sendOrderCancelledEmail(data: OrderEmailData): Promise<voi
       EMAILJS_SERVICE_ID,
       EMAIL_TEMPLATES.ORDER_CANCELLED,
       {
-        to_email: data.email,
-        to_name: data.customerName,
-        order_number: data.orderNumber,
-        product_name: data.productName,
-        quantity: data.quantity,
-        total_amount: data.totalAmount.toFixed(2),
-        status: 'Cancelled',
+        email: data.email,
+        order_id: data.orderNumber,
+        orders: [
+          {
+            name: data.productName,
+            units: data.quantity,
+            price: data.totalAmount.toFixed(2),
+          }
+        ],
+        cost: {
+          shipping: '0.00',
+          tax: '0.00',
+          total: data.totalAmount.toFixed(2),
+        }
       },
       {
         publicKey: EMAILJS_PUBLIC_KEY,
@@ -126,14 +138,20 @@ export async function sendOrderShippedEmail(data: OrderEmailData): Promise<void>
       EMAILJS_SERVICE_ID,
       EMAIL_TEMPLATES.ORDER_SHIPPED,
       {
-        to_email: data.email,
-        to_name: data.customerName,
-        order_number: data.orderNumber,
-        product_name: data.productName,
-        quantity: data.quantity,
-        total_amount: data.totalAmount.toFixed(2),
-        address: data.address || '',
-        status: 'Shipped',
+        email: data.email,
+        order_id: data.orderNumber,
+        orders: [
+          {
+            name: data.productName,
+            units: data.quantity,
+            price: data.totalAmount.toFixed(2),
+          }
+        ],
+        cost: {
+          shipping: '0.00',
+          tax: '0.00',
+          total: data.totalAmount.toFixed(2),
+        }
       },
       {
         publicKey: EMAILJS_PUBLIC_KEY,
@@ -156,13 +174,20 @@ export async function sendOrderDeliveredEmail(data: OrderEmailData): Promise<voi
       EMAILJS_SERVICE_ID,
       EMAIL_TEMPLATES.ORDER_DELIVERED,
       {
-        to_email: data.email,
-        to_name: data.customerName,
-        order_number: data.orderNumber,
-        product_name: data.productName,
-        quantity: data.quantity,
-        total_amount: data.totalAmount.toFixed(2),
-        status: 'Delivered',
+        email: data.email,
+        order_id: data.orderNumber,
+        orders: [
+          {
+            name: data.productName,
+            units: data.quantity,
+            price: data.totalAmount.toFixed(2),
+          }
+        ],
+        cost: {
+          shipping: '0.00',
+          tax: '0.00',
+          total: data.totalAmount.toFixed(2),
+        }
       },
       {
         publicKey: EMAILJS_PUBLIC_KEY,

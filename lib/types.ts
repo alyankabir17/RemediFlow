@@ -3,11 +3,22 @@ export interface Product {
   id: string;
   name: string;
   description: string;
+  categoryId: string;
+  category?: {
+    id: string;
+    name: string;
+  };
   potency: string;
   form: string;
+  manufacturer: string;
+  batchNumber?: string;
+  expiryDate?: string;
   image: string;
   sellingPrice: number;
-  availability: 'in_stock' | 'out_of_stock';
+  purchasePrice: number;
+  isHot: boolean;
+  isBestSeller: boolean;
+  isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -15,11 +26,17 @@ export interface Product {
 export interface CreateProductInput {
   name: string;
   description: string;
+  categoryId: string;
   potency: string;
   form: string;
+  manufacturer: string;
+  batchNumber?: string;
+  expiryDate?: string;
   image: string;
   sellingPrice: number;
-  availability: 'in_stock' | 'out_of_stock';
+  purchasePrice: number;
+  isHot?: boolean;
+  isBestSeller?: boolean;
 }
 
 // Order Types

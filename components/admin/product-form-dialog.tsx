@@ -28,11 +28,17 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Product } from '@/lib/types';
 import { productFormSchema, ProductFormValues } from '@/lib/validations';
 import { adminProductApi } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+
+interface Category {
+  id: string;
+  name: string;
+}
 
 interface ProductFormDialogProps {
   product: Product | null;
@@ -49,6 +55,8 @@ export function ProductFormDialog({
 }: ProductFormDialogProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
   const isEdit = !!product;
 
   const form = useForm<ProductFormValues>({
@@ -56,34 +64,79 @@ export function ProductFormDialog({
     defaultValues: {
       name: '',
       description: '',
+      categoryId: '',
       potency: '',
       form: '',
+      manufacturer: '',
+      batchNumber: '',
+      expiryDate: '',
       image: '',
       sellingPrice: 0,
-      availability: 'in_stock',
+      purchasePrice: 0,
+      isHot: false,
+      isBestSeller: false,
     },
   });
+
+  // Load categories
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        setLoadingCategories(true);
+        const response = await fetch('/api/admin/categories');
+        const data = await response.json();
+        if (data.success) {
+          setCategories(data.data);
+        }
+      } catch (error) {
+        console.error('Failed to load categories:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load categories',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+
+    if (open) {
+      loadCategories();
+    }
+  }, [open, toast]);
 
   useEffect(() => {
     if (product) {
       form.reset({
         name: product.name,
         description: product.description,
+        categoryId: product.categoryId,
         potency: product.potency,
         form: product.form,
+        manufacturer: product.manufacturer,
+        batchNumber: product.batchNumber || '',
+        expiryDate: product.expiryDate ? product.expiryDate.split('T')[0] : '',
         image: product.image,
         sellingPrice: product.sellingPrice,
-        availability: product.availability,
+        purchasePrice: product.purchasePrice,
+        isHot: product.isHot,
+        isBestSeller: product.isBestSeller,
       });
     } else {
       form.reset({
         name: '',
         description: '',
+        categoryId: '',
         potency: '',
         form: '',
+        manufacturer: '',
+        batchNumber: '',
+        expiryDate: '',
         image: '',
         sellingPrice: 0,
-        availability: 'in_stock',
+        purchasePrice: 0,
+        isHot: false,
+        isBestSeller: false,
       });
     }
   }, [product, form]);
@@ -146,7 +199,7 @@ export function ProductFormDialog({
                 <FormItem>
                   <FormLabel>Product Name *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter product name" {...field} />
+                    <Input placeholder="e.g., Paracetamol 500mg" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -172,6 +225,40 @@ export function ProductFormDialog({
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="categoryId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category *</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value}
+                    disabled={loadingCategories}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={loadingCategories ? "Loading categories..." : "Select a category"} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {categories.length === 0 && !loadingCategories && (
+                        <div className="p-2 text-sm text-gray-500">
+                          No categories available. Please create a category first.
+                        </div>
+                      )}
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField
                 control={form.control}
@@ -180,7 +267,7 @@ export function ProductFormDialog({
                   <FormItem>
                     <FormLabel>Potency *</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., 500mg" {...field} />
+                      <Input placeholder="e.g., 500mg, 10%" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -194,13 +281,57 @@ export function ProductFormDialog({
                   <FormItem>
                     <FormLabel>Form *</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Tablet, Capsule" {...field} />
+                      <Input placeholder="e.g., Tablet, Syrup, Cream" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="manufacturer"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Manufacturer *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., PharmaCorp" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="batchNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Batch Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., BC2024001" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="expiryDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Expiry Date</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
@@ -222,7 +353,7 @@ export function ProductFormDialog({
                 name="sellingPrice"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Selling Price *</FormLabel>
+                    <FormLabel>Selling Price (Rs) *</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -240,22 +371,59 @@ export function ProductFormDialog({
 
               <FormField
                 control={form.control}
-                name="availability"
+                name="purchasePrice"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Availability *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select availability" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="in_stock">In Stock</SelectItem>
-                        <SelectItem value="out_of_stock">Out of Stock</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Purchase Price (Rs) *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="flex gap-6">
+              <FormField
+                control={form.control}
+                name="isHot"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>🔥 Hot Item</FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="isBestSeller"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>⭐ Best Seller</FormLabel>
+                    </div>
                   </FormItem>
                 )}
               />
@@ -270,7 +438,7 @@ export function ProductFormDialog({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || loadingCategories}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isEdit ? 'Update' : 'Create'} Product
               </Button>

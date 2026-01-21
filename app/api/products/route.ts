@@ -18,7 +18,8 @@ export async function GET(request: NextRequest) {
     const query = productQuerySchema.parse({
       page: searchParams.get('page') || '1',
       limit: searchParams.get('limit') || '12',
-      category: searchParams.get('category') || undefined,
+      categoryId: searchParams.get('categoryId') || undefined,
+      category: searchParams.get('category') || undefined, // Legacy support
       search: searchParams.get('search') || undefined,
     });
 

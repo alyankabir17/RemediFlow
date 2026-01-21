@@ -5,6 +5,9 @@ export const orderFormSchema = z.object({
   customerName: z.string().min(2, 'Full name must be at least 2 characters').max(100),
   email: z.string().email('Invalid email address'),
   phone: z.string().min(10, 'Phone number must be at least 10 digits').max(15),
+  province: z.string().min(1, 'Province is required'),
+  city: z.string().min(1, 'City is required'),
+  area: z.string().min(1, 'Area is required'),
   address: z.string().min(10, 'Address must be at least 10 characters').max(500),
   quantity: z.number().min(1, 'Quantity must be at least 1').max(1000),
   notes: z.string().max(500).optional(),
@@ -17,11 +20,17 @@ export type OrderFormValues = z.infer<typeof orderFormSchema>;
 export const productFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(200),
   description: z.string().min(10, 'Description must be at least 10 characters').max(2000),
+  categoryId: z.string().min(1, 'Category is required'),
   potency: z.string().min(1, 'Potency is required').max(100),
   form: z.string().min(1, 'Form is required').max(100),
+  manufacturer: z.string().min(1, 'Manufacturer is required').max(200),
+  batchNumber: z.string().max(100).optional(),
+  expiryDate: z.string().optional().transform(val => val === '' ? undefined : val),
   image: z.string().url('Must be a valid URL'),
-  sellingPrice: z.number().min(0.01, 'Price must be greater than 0'),
-  availability: z.enum(['in_stock', 'out_of_stock']),
+  sellingPrice: z.number().min(0.01, 'Selling price must be greater than 0'),
+  purchasePrice: z.number().min(0.01, 'Purchase price must be greater than 0'),
+  isHot: z.boolean().optional(),
+  isBestSeller: z.boolean().optional(),
 });
 
 export type ProductFormValues = z.infer<typeof productFormSchema>;

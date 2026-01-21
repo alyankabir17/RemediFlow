@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { formatCurrency } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -18,13 +19,27 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Product } from '@/lib/types';
 import { orderFormSchema, OrderFormValues } from '@/lib/validations';
 import { publicApi } from '@/lib/api';
+import { 
+  PAKISTAN_LOCATIONS, 
+  getProvinces, 
+  getCitiesByProvince, 
+  getAreasByCity 
+} from '@/lib/data/locations';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -38,6 +53,10 @@ export function OrderFormDialog({ product, open, onClose }: OrderFormDialogProps
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedProvince, setSelectedProvince] = useState<string>('');
+  const [selectedCity, setSelectedCity] = useState<string>('');
+  const [cities, setCities] = useState<string[]>([]);
+  const [areas, setAreas] = useState<string[]>([]);
 
   const form = useForm<OrderFormValues>({
     resolver: zodResolver(orderFormSchema),
@@ -45,6 +64,9 @@ export function OrderFormDialog({ product, open, onClose }: OrderFormDialogProps
       customerName: '',
       email: '',
       phone: '',
+      province: '',
+      city: '',
+      area: '',
       address: '',
       quantity: 1,
       notes: '',
@@ -53,9 +75,39 @@ export function OrderFormDialog({ product, open, onClose }: OrderFormDialogProps
   });
 
   // Update productId when product changes
-  if (product && form.getValues('productId') !== product.id) {
-    form.setValue('productId', product.id);
-  }
+  useEffect(() => {
+    if (product) {
+      form.setValue('productId', product.id);
+    }
+  }, [product, form]);
+
+  // Update cities when province changes
+  useEffect(() => {
+    const currentProvince = form.watch('province');
+    if (currentProvince && currentProvince !== selectedProvince) {
+      setSelectedProvince(currentProvince);
+      const provinceCities = getCitiesByProvince(currentProvince);
+      setCities(provinceCities);
+      // Reset city and area
+      form.setValue('city', '');
+      form.setValue('area', '');
+      setSelectedCity('');
+      setAreas([]);
+    }
+  }, [form.watch('province'), selectedProvince, form]);
+
+  // Update areas when city changes
+  useEffect(() => {
+    const currentCity = form.watch('city');
+    const currentProvince = form.watch('province');
+    if (currentCity && currentCity !== selectedCity && currentProvince) {
+      setSelectedCity(currentCity);
+      const cityAreas = getAreasByCity(currentProvince, currentCity);
+      setAreas(cityAreas);
+      // Reset area
+      form.setValue('area', '');
+    }
+  }, [form.watch('city'), form.watch('province'), selectedCity, form]);
 
   const onSubmit = async (data: OrderFormValues) => {
     try {
@@ -140,7 +192,7 @@ export function OrderFormDialog({ product, open, onClose }: OrderFormDialogProps
                   <FormItem>
                     <FormLabel>Phone Number *</FormLabel>
                     <FormControl>
-                      <Input placeholder="+1 234 567 8900" {...field} />
+                      <Input placeholder="+92 300 1234567" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -167,20 +219,109 @@ export function OrderFormDialog({ product, open, onClose }: OrderFormDialogProps
               />
             </div>
 
+            {/* Province/City/Area Selection */}
+            <div className="grid gap-4 sm:grid-cols-3">
+              <FormField
+                control={form.control}
+                name="province"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Province *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Province" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {getProvinces().map((province) => (
+                          <SelectItem key={province} value={province}>
+                            {province}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="city"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>City *</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value}
+                      disabled={!form.watch('province') || cities.length === 0}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={!form.watch('province') ? "Select province first" : "Select City"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {cities.map((city) => (
+                          <SelectItem key={city} value={city}>
+                            {city}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="area"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Area *</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value}
+                      disabled={!form.watch('city') || areas.length === 0}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={!form.watch('city') ? "Select city first" : "Select Area"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {areas.map((area) => (
+                          <SelectItem key={area} value={area}>
+                            {area}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
               name="address"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Delivery Address *</FormLabel>
+                  <FormLabel>Full Address Details *</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Enter your full delivery address"
+                      placeholder="Street address, house number, building name, etc."
                       className="resize-none"
                       rows={3}
                       {...field}
                     />
                   </FormControl>
+                  <FormDescription>
+                    Complete address details for delivery (street, house number, landmark, etc.)
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -212,12 +353,12 @@ export function OrderFormDialog({ product, open, onClose }: OrderFormDialogProps
               </div>
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-gray-600">Unit Price:</span>
-                <span className="font-medium">${product.sellingPrice.toFixed(2)}</span>
+                <span className="font-medium">{formatCurrency(product.sellingPrice)}</span>
               </div>
               <div className="flex justify-between items-center pt-2 border-t">
                 <span className="font-semibold">Estimated Total:</span>
                 <span className="text-xl font-bold text-blue-600">
-                  ${(product.sellingPrice * (form.watch('quantity') || 1)).toFixed(2)}
+                  {formatCurrency(product.sellingPrice * (form.watch('quantity') || 1))}
                 </span>
               </div>
             </div>

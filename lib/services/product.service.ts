@@ -12,15 +12,21 @@ import { getPublicStockStatus } from '../utils/stock';
  * EXCLUDES: purchasePrice and other sensitive data
  */
 export async function getPublicProducts(query: ProductQueryInput) {
-  const { page, limit, category, search } = query;
+  const { page, limit, categoryId, category, search } = query;
   const skip = (page - 1) * limit;
 
   const where: any = {
     isActive: true, // Only show active products
   };
 
-  if (category) {
-    where.category = category;
+  // Filter by categoryId (new way) or category name (legacy)
+  if (categoryId) {
+    where.categoryId = categoryId;
+  } else if (category) {
+    // Legacy: search by category name
+    where.category = {
+      name: category,
+    };
   }
 
   if (search) {
@@ -174,7 +180,11 @@ export async function createProduct(data: CreateProductInput) {
   const product = await prisma.product.create({
     data: {
       ...data,
+      // expiryDate is already transformed to ISO string or undefined by validation
       expiryDate: data.expiryDate ? new Date(data.expiryDate) : null,
+      // Ensure booleans have defaults
+      isHot: data.isHot ?? false,
+      isBestSeller: data.isBestSeller ?? false,
     },
   });
 

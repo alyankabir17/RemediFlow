@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Product } from '@/lib/types';
 import Image from 'next/image';
+import { formatCurrency } from '@/lib/utils';
 
 interface ProductCardProps {
   product: Product;
@@ -47,7 +48,7 @@ export function ProductCard({ product, onOrderClick }: ProductCardProps) {
         
         <div className="mt-4 flex items-center justify-between pt-4 border-t">
           <span className="text-2xl font-bold text-gray-900">
-            ${product.sellingPrice.toFixed(2)}
+            {formatCurrency(product.sellingPrice)}
           </span>
           <button
             onClick={() => onOrderClick(product)}

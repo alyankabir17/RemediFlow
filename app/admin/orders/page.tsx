@@ -84,9 +84,21 @@ export default function OrdersPage() {
       });
       loadOrders();
     } catch (error) {
+      let errorMessage = 'Failed to update order status. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Insufficient stock')) {
+          errorMessage = 'Cannot confirm order: Insufficient stock available. Please record a purchase first.';
+        } else if (error.message.includes('already confirmed')) {
+          errorMessage = 'This order has already been confirmed.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: 'Error',
-        description: 'Failed to update order status. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     }

@@ -9,6 +9,7 @@ import {
   ShoppingCart,
   BarChart3,
   Menu,
+  FolderTree,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from '@/components/ui/sheet';
@@ -16,6 +17,7 @@ import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+  { name: 'Categories', href: '/admin/categories', icon: FolderTree },
   { name: 'Products', href: '/admin/products', icon: Package },
   { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
   { name: 'Reports', href: '/admin/reports', icon: BarChart3 },

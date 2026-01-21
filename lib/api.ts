@@ -103,3 +103,41 @@ export const adminDashboardApi = {
     return apiFetch<ApiResponse<DashboardStats>>('/admin/dashboard/stats');
   },
 };
+
+// Admin API - Purchases
+export interface Purchase {
+  id: string;
+  productId: string;
+  quantity: number;
+  purchasePrice: number;
+  supplier?: string;
+  notes?: string;
+  purchaseDate: string;
+  createdAt: string;
+  product?: {
+    id: string;
+    name: string;
+  };
+}
+
+export interface CreatePurchaseInput {
+  productId: string;
+  quantity: number;
+  purchasePrice: number;
+  supplier?: string;
+  notes?: string;
+  purchaseDate?: string;
+}
+
+export const adminPurchaseApi = {
+  getPurchases: async (page = 1, limit = 10): Promise<PaginatedResponse<Purchase>> => {
+    return apiFetch<PaginatedResponse<Purchase>>(`/admin/purchases?page=${page}&limit=${limit}`);
+  },
+
+  createPurchase: async (data: CreatePurchaseInput): Promise<ApiResponse<Purchase>> => {
+    return apiFetch<ApiResponse<Purchase>>('/admin/purchases', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+};

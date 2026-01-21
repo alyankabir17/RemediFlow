@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { formatCurrency } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,9 +23,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { ProductFormDialog } from '@/components/admin/product-form-dialog';
+import { PurchaseFormDialog } from '@/components/admin/purchase-form-dialog';
 import { Product } from '@/lib/types';
 import { adminProductApi } from '@/lib/api';
-import { Loader2, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Pencil, Trash2, Package } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 
@@ -35,6 +37,8 @@ export default function ProductsPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [showPurchaseForm, setShowPurchaseForm] = useState(false);
+  const [purchaseProductId, setPurchaseProductId] = useState<string | undefined>(undefined);
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -91,15 +95,27 @@ export default function ProductsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Products</h1>
           <p className="mt-2 text-gray-600">Manage your product catalog</p>
         </div>
-        <Button onClick={handleCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Product
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              setPurchaseProductId(undefined);
+              setShowPurchaseForm(true);
+            }}
+          >
+            <Package className="mr-2 h-4 w-4" />
+            Record Purchase
+          </Button>
+          <Button onClick={handleCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Product
+          </Button>
+        </div>
       </div>
 
       {loading && (
@@ -153,7 +169,7 @@ export default function ProductsPage() {
                       <TableCell className="font-medium">{product.name}</TableCell>
                       <TableCell>{product.potency}</TableCell>
                       <TableCell>{product.form}</TableCell>
-                      <TableCell>${product.sellingPrice.toFixed(2)}</TableCell>
+                      <TableCell>{formatCurrency(product.sellingPrice)}</TableCell>
                       <TableCell>
                         <Badge
                           variant={
@@ -165,6 +181,17 @@ export default function ProductsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => {
+                              setPurchaseProductId(product.id);
+                              setShowPurchaseForm(true);
+                            }}
+                            title="Record Purchase"
+                          >
+                            <Package className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="outline"
                             size="icon"
@@ -217,6 +244,16 @@ export default function ProductsPage() {
         open={showForm}
         onClose={() => setShowForm(false)}
         onSuccess={loadProducts}
+      />
+
+      <PurchaseFormDialog
+        open={showPurchaseForm}
+        onClose={() => {
+          setShowPurchaseForm(false);
+          setPurchaseProductId(undefined);
+        }}
+        onSuccess={loadProducts}
+        defaultProductId={purchaseProductId}
       />
 
       <AlertDialog open={!!deleteProduct} onOpenChange={() => setDeleteProduct(null)}>

@@ -27,13 +27,45 @@ async function main() {
   });
   console.log('✅ Admin user created');
 
-  // 2. Create sample products
+  // 2. Create categories
+  const categories = await Promise.all([
+    prisma.category.upsert({
+      where: { name: 'Analgesics' },
+      update: {},
+      create: {
+        name: 'Analgesics',
+        description: 'Pain relievers and fever reducers',
+        isActive: true,
+      },
+    }),
+    prisma.category.upsert({
+      where: { name: 'Antibiotics' },
+      update: {},
+      create: {
+        name: 'Antibiotics',
+        description: 'Medications for bacterial infections',
+        isActive: true,
+      },
+    }),
+    prisma.category.upsert({
+      where: { name: 'Vitamins' },
+      update: {},
+      create: {
+        name: 'Vitamins',
+        description: 'Dietary supplements and vitamins',
+        isActive: true,
+      },
+    }),
+  ]);
+  console.log('✅ Categories created:', categories.length);
+
+  // 3. Create sample products
   const products = await Promise.all([
     prisma.product.create({
       data: {
         name: 'Paracetamol 500mg',
         description: 'Pain reliever and fever reducer',
-        category: 'Analgesics',
+        categoryId: categories[0].id,
         potency: '500mg',
         form: 'Tablet',
         manufacturer: 'PharmaCorp',
@@ -48,7 +80,7 @@ async function main() {
       data: {
         name: 'Amoxicillin 250mg',
         description: 'Antibiotic for bacterial infections',
-        category: 'Antibiotics',
+        categoryId: categories[1].id,
         potency: '250mg',
         form: 'Capsule',
         manufacturer: 'MediLife',
@@ -63,7 +95,7 @@ async function main() {
       data: {
         name: 'Vitamin C 1000mg',
         description: 'Immune system support supplement',
-        category: 'Vitamins',
+        categoryId: categories[2].id,
         potency: '1000mg',
         form: 'Tablet',
         manufacturer: 'HealthPlus',
@@ -116,7 +148,10 @@ async function main() {
         customerName: 'John Doe',
         email: 'john@example.com',
         phone: '+1234567890',
-        address: '123 Main St, New York, NY 10001',
+        province: 'New York',
+        city: 'New York',
+        area: 'Manhattan',
+        address: '123 Main St, Apt 4B',
         productId: products[0].id,
         quantity: 2,
         totalAmount: 11.98,
@@ -128,7 +163,10 @@ async function main() {
         customerName: 'Jane Smith',
         email: 'jane@example.com',
         phone: '+1234567891',
-        address: '456 Oak Ave, Los Angeles, CA 90001',
+        province: 'California',
+        city: 'Los Angeles',
+        area: 'Downtown',
+        address: '456 Oak Ave, Suite 200',
         productId: products[1].id,
         quantity: 1,
         totalAmount: 12.99,
@@ -153,6 +191,7 @@ async function main() {
   console.log('🎉 Database seeded successfully!');
   console.log('\n📊 Summary:');
   console.log('- Admin user: admin@remedyflow.com (password: admin123)');
+  console.log('- Categories: 3');
   console.log('- Products: 3');
   console.log('- Purchases: 3');
   console.log('- Orders: 2 (1 pending, 1 confirmed)');

@@ -1,9 +1,57 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Shield, Zap, Clock } from 'lucide-react';
+import { ArrowRight, Shield, Zap, Clock, Flame, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ProductCard } from '@/components/public/product-card';
+import { OrderFormDialog } from '@/components/public/order-form-dialog';
+import { Product } from '@/lib/types';
+import { publicApi } from '@/lib/api';
+import { Loader2 } from 'lucide-react';
 
 export default function HomePage() {
+  const [hotProducts, setHotProducts] = useState<Product[]>([]);
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  useEffect(() => {
+    loadFeaturedProducts();
+  }, []);
+
+  const loadFeaturedProducts = async () => {
+    try {
+      setLoading(true);
+      // Fetch hot and bestseller products
+      const [hotRes, bestRes] = await Promise.all([
+        fetch('/api/products?limit=4'),
+        fetch('/api/products?limit=4'),
+      ]);
+      
+      const hotData = await hotRes.json();
+      const bestData = await bestRes.json();
+      
+      if (hotData.data) {
+        // Filter for hot products (assuming isHot flag exists)
+        const hot = hotData.data.filter((p: any) => p.isHot).slice(0, 4);
+        setHotProducts(hot);
+      }
+      
+      if (bestData.data) {
+        // Filter for bestseller products
+        const best = bestData.data.filter((p: any) => p.isBestSeller).slice(0, 4);
+        setFeaturedProducts(best);
+      }
+    } catch (error) {
+      console.error('Failed to load featured products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
@@ -29,6 +77,78 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Hot Products Section */}
+      {hotProducts.length > 0 && (
+        <section className="py-16 bg-white">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <Flame className="h-8 w-8 text-orange-500" />
+                <h2 className="text-3xl font-bold text-gray-900">Hot Products</h2>
+                <Badge variant="destructive" className="ml-2">Trending</Badge>
+              </div>
+              <Button variant="outline" asChild>
+                <Link href="/products">
+                  View All
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              </div>
+            ) : (
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {hotProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onOrderClick={setSelectedProduct}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Best Sellers Section */}
+      {featuredProducts.length > 0 && (
+        <section className="py-16 bg-gray-50">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <TrendingUp className="h-8 w-8 text-green-500" />
+                <h2 className="text-3xl font-bold text-gray-900">Best Sellers</h2>
+                <Badge variant="default" className="ml-2">Popular</Badge>
+              </div>
+              <Button variant="outline" asChild>
+                <Link href="/products">
+                  View All
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              </div>
+            ) : (
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {featuredProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onOrderClick={setSelectedProduct}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Features Section */}
       <section className="py-20 bg-white">
@@ -113,6 +233,12 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <OrderFormDialog
+        product={selectedProduct}
+        open={!!selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+      />
     </div>
   );
 }

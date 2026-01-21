@@ -23,12 +23,29 @@ model User {
   @@map("users")
 }
 
+// Categories (Admin-managed)
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?  @db.Text
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  products Product[]
+
+  @@index([isActive])
+  @@map("categories")
+}
+
 // Products
 model Product {
   id            String    @id @default(cuid())
   name          String
   description   String    @db.Text
-  category      String
+  categoryId    String    // Reference to Category
+  category      Category  @relation(fields: [categoryId], references: [id])
   potency       String
   form          String    // Tablet, Capsule, Syrup, etc.
   manufacturer  String
@@ -36,6 +53,8 @@ model Product {
   expiryDate    DateTime?
   sellingPrice  Float     // Price shown to customers
   purchasePrice Float     // Cost price (NEVER exposed to public)
+  isHot         Boolean   @default(false) // Hot/trending product badge
+  isBestSeller  Boolean   @default(false) // Best seller badge
   image         String
   isActive      Boolean   @default(true) // Soft delete
   createdAt     DateTime  @default(now())
@@ -47,8 +66,10 @@ model Product {
   sales     Sale[]
 
   @@index([isActive])
-  @@index([category])
+  @@index([categoryId])
   @@index([expiryDate])
+  @@index([isHot])
+  @@index([isBestSeller])
   @@map("products")
 }
 
@@ -59,7 +80,10 @@ model Order {
   customerName String
   email        String
   phone        String
-  address      String      @db.Text
+  province     String      // Province/State
+  city         String      // City
+  area         String      // Delivery area/neighborhood
+  address      String      @db.Text // Full address details
   productId    String
   quantity     Int
   notes        String?     @db.Text

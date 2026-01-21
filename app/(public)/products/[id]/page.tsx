@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { formatCurrency } from '@/lib/utils';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -96,7 +97,7 @@ export default function ProductDetailPage() {
           </h1>
 
           <p className="text-3xl font-bold text-gray-900 mb-6">
-            ${product.sellingPrice.toFixed(2)}
+            {formatCurrency(product.sellingPrice)}
           </p>
 
           <div className="space-y-4 mb-6">

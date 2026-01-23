@@ -31,18 +31,13 @@ export async function createOrder(data: CreateOrderInput) {
   // Calculate total amount based on current selling price
   const totalAmount = product.sellingPrice * data.quantity;
 
-  // Create order with PENDING status (combine address fields)
-  const fullAddress = `${data.address}\n${data.area}, ${data.city}, ${data.province}`;
-
+  // Create order with PENDING status
   const order = await prisma.order.create({
     data: {
       customerName: data.customerName,
       email: data.email,
       phone: data.phone,
-      province: data.province,
-      city: data.city,
-      area: data.area,
-      address: fullAddress,
+      address: data.address,
       productId: data.productId,
       quantity: data.quantity,
       notes: data.notes,

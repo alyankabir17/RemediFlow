@@ -1,18 +1,27 @@
 import { Badge } from '@/components/ui/badge';
 import { Product } from '@/lib/types';
 import Image from 'next/image';
-import { formatCurrency } from '@/lib/utils';
+import Link from 'next/link';
+import { formatCurrency, cn } from '@/lib/utils';
 
 interface ProductCardProps {
   product: Product;
-  onOrderClick: (product: Product) => void;
+  onOrderClick?: (product: Product) => void;
 }
 
 export function ProductCard({ product, onOrderClick }: ProductCardProps) {
   const isInStock = product.availability === 'in_stock';
 
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-all hover:shadow-md">
+    <Link
+      href={`/products/${product.id}`}
+      className={cn(
+        "group relative flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-all block",
+        isInStock 
+          ? "hover:shadow-lg hover:scale-[1.02] cursor-pointer hover:border-blue-300" 
+          : "opacity-75"
+      )}
+    >
       <div className="relative aspect-square overflow-hidden bg-gray-100">
         <Image
           src={product.image}
@@ -50,15 +59,11 @@ export function ProductCard({ product, onOrderClick }: ProductCardProps) {
           <span className="text-2xl font-bold text-gray-900">
             {formatCurrency(product.sellingPrice)}
           </span>
-          <button
-            onClick={() => onOrderClick(product)}
-            disabled={!isInStock}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-          >
-            {isInStock ? 'Book Order' : 'Out of Stock'}
-          </button>
+          <span className="text-sm font-medium text-blue-600 group-hover:text-blue-700">
+            {isInStock ? 'View Details →' : 'Out of Stock'}
+          </span>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

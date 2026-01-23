@@ -43,13 +43,21 @@ export async function getPublicProducts(query: ProductQueryInput) {
         id: true,
         name: true,
         description: true,
-        category: true,
+        categoryId: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         potency: true,
         form: true,
         manufacturer: true,
         expiryDate: true,
         sellingPrice: true, // PUBLIC: Show selling price
         image: true,
+        isHot: true,
+        isBestSeller: true,
         createdAt: true,
         updatedAt: true,
         // EXCLUDED: purchasePrice (sensitive)

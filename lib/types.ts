@@ -19,6 +19,8 @@ export interface Product {
   isHot: boolean;
   isBestSeller: boolean;
   isActive: boolean;
+  availability?: 'in_stock' | 'out_of_stock';
+  quantity?: number; // For cart/order context
   createdAt?: string;
   updatedAt?: string;
 }

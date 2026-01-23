@@ -80,10 +80,7 @@ model Order {
   customerName String
   email        String
   phone        String
-  province     String      // Province/State
-  city         String      // City
-  area         String      // Delivery area/neighborhood
-  address      String      @db.Text // Full address details
+  address      String      @db.Text // Complete delivery address (manual entry)
   productId    String
   quantity     Int
   notes        String?     @db.Text

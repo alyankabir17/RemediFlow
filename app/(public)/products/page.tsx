@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ProductCard } from '@/components/public/product-card';
-import { OrderFormDialog } from '@/components/public/order-form-dialog';
 import { CategorySidebar } from '@/components/public/category-sidebar';
 import { MobileCategoryDrawer } from '@/components/public/mobile-category-drawer';
 import { Product } from '@/lib/types';
@@ -16,7 +15,6 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -32,7 +30,13 @@ export default function ProductsPage() {
     try {
       setLoading(true);
       const categoryParam = categoryId ? `&categoryId=${categoryId}` : '';
-      const response = await fetch(`/api/products?page=${pageNum}&limit=12${categoryParam}`);
+      const response = await fetch(
+        `/api/products?page=${pageNum}&limit=12${categoryParam}`,
+        {
+          next: { revalidate: 30 },
+          cache: 'force-cache',
+        }
+      );
       const data = await response.json();
       
       if (response.ok && data.data) {
@@ -51,7 +55,7 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div className="container mx-auto px-4 lg:px-6 py-12">
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
@@ -67,19 +71,18 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Category Sidebar - Only visible on desktop */}
-        <aside className="hidden lg:block lg:w-64 flex-shrink-0">
-          <div className="sticky top-24">
-            <CategorySidebar />
-          </div>
-        </aside>
-
-        {/* Products Grid */}
-        <div className="flex-1">
+      <div className="flex flex-col">
+        {/* Products Grid - Full Width */}
+        <div className="w-full">
           {loading && (
-            <div className="flex justify-center items-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="bg-gray-200 aspect-square rounded-lg mb-4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              ))}
             </div>
           )}
 
@@ -102,7 +105,6 @@ export default function ProductsPage() {
                   <ProductCard
                     key={product.id}
                     product={product}
-                    onOrderClick={setSelectedProduct}
                   />
                 ))}
               </div>
@@ -140,12 +142,6 @@ export default function ProductsPage() {
           )}
         </div>
       </div>
-
-      <OrderFormDialog
-        product={selectedProduct}
-        open={!!selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-      />
     </div>
   );
 }

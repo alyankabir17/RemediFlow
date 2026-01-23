@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ProductCard } from '@/components/public/product-card';
-import { OrderFormDialog } from '@/components/public/order-form-dialog';
 import { Product } from '@/lib/types';
 import { publicApi } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
@@ -16,7 +15,6 @@ export default function HomePage() {
   const [hotProducts, setHotProducts] = useState<Product[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     loadFeaturedProducts();
@@ -25,24 +23,22 @@ export default function HomePage() {
   const loadFeaturedProducts = async () => {
     try {
       setLoading(true);
-      // Fetch hot and bestseller products
-      const [hotRes, bestRes] = await Promise.all([
-        fetch('/api/products?limit=4'),
-        fetch('/api/products?limit=4'),
+      // Parallel fetch with optimized limits and caching headers
+      const [response] = await Promise.all([
+        fetch('/api/products?limit=8', { 
+          next: { revalidate: 60 }, // Cache for 60 seconds
+          cache: 'force-cache' 
+        }),
       ]);
       
-      const hotData = await hotRes.json();
-      const bestData = await bestRes.json();
+      const data = await response.json();
       
-      if (hotData.data) {
-        // Filter for hot products (assuming isHot flag exists)
-        const hot = hotData.data.filter((p: any) => p.isHot).slice(0, 4);
+      if (data.data) {
+        // Filter and separate hot and bestseller products
+        const hot = data.data.filter((p: any) => p.isHot).slice(0, 4);
+        const best = data.data.filter((p: any) => p.isBestSeller).slice(0, 4);
+        
         setHotProducts(hot);
-      }
-      
-      if (bestData.data) {
-        // Filter for bestseller products
-        const best = bestData.data.filter((p: any) => p.isBestSeller).slice(0, 4);
         setFeaturedProducts(best);
       }
     } catch (error) {
@@ -68,7 +64,7 @@ export default function HomePage() {
             </p>
             <div className="mt-10 flex items-center justify-center gap-4">
               <Button size="lg" asChild>
-                <Link href="/products">
+                <Link href="/products" prefetch={true}>
                   Browse Products
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
@@ -89,7 +85,7 @@ export default function HomePage() {
                 <Badge variant="destructive" className="ml-2">Trending</Badge>
               </div>
               <Button variant="outline" asChild>
-                <Link href="/products">
+                <Link href="/products" prefetch={true}>
                   View All
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
@@ -105,7 +101,6 @@ export default function HomePage() {
                   <ProductCard
                     key={product.id}
                     product={product}
-                    onOrderClick={setSelectedProduct}
                   />
                 ))}
               </div>
@@ -125,7 +120,7 @@ export default function HomePage() {
                 <Badge variant="default" className="ml-2">Popular</Badge>
               </div>
               <Button variant="outline" asChild>
-                <Link href="/products">
+                <Link href="/products" prefetch={true}>
                   View All
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
@@ -141,7 +136,6 @@ export default function HomePage() {
                   <ProductCard
                     key={product.id}
                     product={product}
-                    onOrderClick={setSelectedProduct}
                   />
                 ))}
               </div>
@@ -224,7 +218,7 @@ export default function HomePage() {
             </p>
             <div className="mt-8">
               <Button size="lg" variant="secondary" asChild>
-                <Link href="/products">
+                <Link href="/products" prefetch={true}>
                   View All Products
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
@@ -233,12 +227,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      <OrderFormDialog
-        product={selectedProduct}
-        open={!!selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-      />
     </div>
   );
 }

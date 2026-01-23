@@ -21,27 +21,15 @@ import {
   FormMessage,
   FormDescription,
 } from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Product } from '@/lib/types';
 import { orderFormSchema, OrderFormValues } from '@/lib/validations';
 import { publicApi } from '@/lib/api';
-import { 
-  PAKISTAN_LOCATIONS, 
-  getProvinces, 
-  getCitiesByProvince, 
-  getAreasByCity 
-} from '@/lib/data/locations';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowLeft, ShoppingBag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 interface OrderFormDialogProps {
   product: Product | null;
@@ -53,10 +41,6 @@ export function OrderFormDialog({ product, open, onClose }: OrderFormDialogProps
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedProvince, setSelectedProvince] = useState<string>('');
-  const [selectedCity, setSelectedCity] = useState<string>('');
-  const [cities, setCities] = useState<string[]>([]);
-  const [areas, setAreas] = useState<string[]>([]);
 
   const form = useForm<OrderFormValues>({
     resolver: zodResolver(orderFormSchema),
@@ -64,9 +48,6 @@ export function OrderFormDialog({ product, open, onClose }: OrderFormDialogProps
       customerName: '',
       email: '',
       phone: '',
-      province: '',
-      city: '',
-      area: '',
       address: '',
       quantity: 1,
       notes: '',
@@ -81,38 +62,13 @@ export function OrderFormDialog({ product, open, onClose }: OrderFormDialogProps
     }
   }, [product, form]);
 
-  // Update cities when province changes
-  useEffect(() => {
-    const currentProvince = form.watch('province');
-    if (currentProvince && currentProvince !== selectedProvince) {
-      setSelectedProvince(currentProvince);
-      const provinceCities = getCitiesByProvince(currentProvince);
-      setCities(provinceCities);
-      // Reset city and area
-      form.setValue('city', '');
-      form.setValue('area', '');
-      setSelectedCity('');
-      setAreas([]);
-    }
-  }, [form.watch('province'), selectedProvince, form]);
-
-  // Update areas when city changes
-  useEffect(() => {
-    const currentCity = form.watch('city');
-    const currentProvince = form.watch('province');
-    if (currentCity && currentCity !== selectedCity && currentProvince) {
-      setSelectedCity(currentCity);
-      const cityAreas = getAreasByCity(currentProvince, currentCity);
-      setAreas(cityAreas);
-      // Reset area
-      form.setValue('area', '');
-    }
-  }, [form.watch('city'), form.watch('province'), selectedCity, form]);
-
   const onSubmit = async (data: OrderFormValues) => {
     try {
+      console.log('Order form submitted with data:', data);
       setIsSubmitting(true);
-      await publicApi.createOrder(data);
+      
+      const response = await publicApi.createOrder(data);
+      console.log('Order response:', response);
       
       toast({
         title: 'Order placed successfully!',
@@ -123,6 +79,7 @@ export function OrderFormDialog({ product, open, onClose }: OrderFormDialogProps
       onClose();
       router.push('/order-success');
     } catch (error) {
+      console.error('Order submission error:', error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to place order. Please try again.',
@@ -146,14 +103,30 @@ export function OrderFormDialog({ product, open, onClose }: OrderFormDialogProps
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Book Order for {product.name}</DialogTitle>
+          <div className="flex items-center gap-2">
+            <ShoppingBag className="h-5 w-5 text-blue-600" />
+            <DialogTitle>Book Order for {product.name}</DialogTitle>
+          </div>
           <DialogDescription>
             Fill in your details to place an order. We'll contact you to confirm.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form 
+            onSubmit={form.handleSubmit(
+              onSubmit,
+              (errors) => {
+                console.log('Form validation errors:', errors);
+                toast({
+                  title: 'Validation Error',
+                  description: 'Please check all required fields',
+                  variant: 'destructive',
+                });
+              }
+            )} 
+            className="space-y-4"
+          >
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField
                 control={form.control}
@@ -219,108 +192,22 @@ export function OrderFormDialog({ product, open, onClose }: OrderFormDialogProps
               />
             </div>
 
-            {/* Province/City/Area Selection */}
-            <div className="grid gap-4 sm:grid-cols-3">
-              <FormField
-                control={form.control}
-                name="province"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Province *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select Province" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {getProvinces().map((province) => (
-                          <SelectItem key={province} value={province}>
-                            {province}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>City *</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      value={field.value}
-                      disabled={!form.watch('province') || cities.length === 0}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={!form.watch('province') ? "Select province first" : "Select City"} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {cities.map((city) => (
-                          <SelectItem key={city} value={city}>
-                            {city}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="area"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Area *</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      value={field.value}
-                      disabled={!form.watch('city') || areas.length === 0}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={!form.watch('city') ? "Select city first" : "Select Area"} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {areas.map((area) => (
-                          <SelectItem key={area} value={area}>
-                            {area}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
             <FormField
               control={form.control}
               name="address"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Address Details *</FormLabel>
+                  <FormLabel>Complete Delivery Address *</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Street address, house number, building name, etc."
+                      placeholder="Enter your complete address including street, area, city, province"
                       className="resize-none"
-                      rows={3}
+                      rows={4}
                       {...field}
                     />
                   </FormControl>
                   <FormDescription>
-                    Complete address details for delivery (street, house number, landmark, etc.)
+                    Please provide full address with city, area, street, house numbe,etc
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -363,19 +250,40 @@ export function OrderFormDialog({ product, open, onClose }: OrderFormDialogProps
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4">
+            <div className="flex flex-col sm:flex-row justify-between gap-3 pt-4 border-t">
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleClose}
                 disabled={isSubmitting}
+                className="gap-2"
               >
-                Cancel
+                <ArrowLeft className="h-4 w-4" />
+                Back to Shopping
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Place Order
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleClose}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="relative z-10"
+                  onMouseDown={() => console.log('Button mouse down')}
+                  onClick={(e) => {
+                    console.log('Place Order button clicked, isSubmitting:', isSubmitting);
+                    console.log('Event:', e);
+                  }}
+                >
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Place Order
+                </Button>
+              </div>
             </div>
           </form>
         </Form>

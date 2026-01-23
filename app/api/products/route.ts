@@ -25,7 +25,12 @@ export async function GET(request: NextRequest) {
 
     const result = await getPublicProducts(query);
 
-    return NextResponse.json(result, { status: 200 });
+    return NextResponse.json(result, { 
+      status: 200,
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+      },
+    });
   } catch (error) {
     console.error('[GET /api/products] Error:', error);
     

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
 import { CategorySidebar } from './category-sidebar';
 
 export function MobileCategoryDrawer() {
@@ -22,6 +22,9 @@ export function MobileCategoryDrawer() {
             <Filter className="h-5 w-5 text-blue-600" />
             Filter by Category
           </SheetTitle>
+          <SheetDescription>
+            Browse products by category
+          </SheetDescription>
         </SheetHeader>
         <div className="px-4 pb-6">
           <CategorySidebar />

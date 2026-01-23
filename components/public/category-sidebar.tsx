@@ -34,10 +34,16 @@ export function CategorySidebar({ className }: CategorySidebarProps) {
   const loadCategories = async () => {
     try {
       setLoading(true);
+      console.log('Loading categories...');
       const response = await fetch('/api/categories');
+      console.log('Categories response status:', response.status);
       const data = await response.json();
+      console.log('Categories data:', data);
       if (data.success) {
         setCategories(data.data);
+        console.log('Categories loaded:', data.data.length);
+      } else {
+        console.error('Categories API returned success: false', data);
       }
     } catch (error) {
       console.error('Failed to load categories:', error);
@@ -106,17 +112,12 @@ export function CategorySidebar({ className }: CategorySidebarProps) {
                     'w-full text-left px-4 py-3 rounded-lg transition-colors',
                     'hover:bg-blue-50 hover:text-blue-700',
                     selectedCategoryId === category.id
-                      ? 'bg-blue-100 text-blue-700 font-medium border border-blue-300'
+                      ? 'bg-blue-100 text-blue-700 font-bold border border-blue-300'
                       : 'text-gray-700 bg-gray-50'
                   )}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{category.name}</span>
-                    {category._count && (
-                      <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded-full">
-                        {category._count.products}
-                      </span>
-                    )}
+                  <div>
+                    <span className="text-sm font-bold">{category.name}</span>
                   </div>
                   {category.description && (
                     <p className="text-xs text-gray-500 mt-1 line-clamp-1">

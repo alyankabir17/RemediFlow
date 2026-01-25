@@ -29,12 +29,13 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
-    console.error('[GET /api/admin/orders] Error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[GET /api/admin/orders] Error:', errorMessage);
 
     return NextResponse.json(
       {
         error: 'Failed to fetch orders',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: errorMessage,
       },
       { status: 500 }
     );

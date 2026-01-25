@@ -148,6 +148,14 @@ export async function getAdminProducts(query: ProductQueryInput) {
   const [products, total] = await Promise.all([
     prisma.product.findMany({
       where,
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
       skip,
       take: limit,
       orderBy: { createdAt: 'desc' },
@@ -155,8 +163,14 @@ export async function getAdminProducts(query: ProductQueryInput) {
     prisma.product.count({ where }),
   ]);
 
+  // Add stock availability based on isActive field
+  const productsWithAvailability = products.map((product) => ({
+    ...product,
+    availability: product.isActive ? 'in_stock' : 'out_of_stock',
+  }));
+
   return {
-    data: products,
+    data: productsWithAvailability,
     pagination: {
       page,
       limit,
@@ -193,6 +207,7 @@ export async function createProduct(data: CreateProductInput) {
       // Ensure booleans have defaults
       isHot: data.isHot ?? false,
       isBestSeller: data.isBestSeller ?? false,
+      isActive: data.isActive ?? true,
     },
   });
 

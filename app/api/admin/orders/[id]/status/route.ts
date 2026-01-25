@@ -39,21 +39,47 @@ export async function PATCH(
     console.log('✅ Order status updated:', order.status);
 
     // Send email notification to customer
-    console.log('📧 Attempting to send email notification...');
+    console.log('\n========== ORDER STATUS ROUTE - EMAIL SECTION ==========');
+    console.log('📧 Preparing email data...');
+    console.log('📧 Order details:');
+    console.log('   - Customer:', order.customerName);
+    console.log('   - Email:', order.email);
+    console.log('   - Order #:', order.orderNumber);
+    console.log('   - Product:', order.product?.name || 'MISSING PRODUCT');
+    console.log('   - Product Image:', order.product?.image || 'NO IMAGE');
+    console.log('   - Quantity:', order.quantity);
+    console.log('   - Total:', order.totalAmount);
+    console.log('   - New Status:', validatedData.status);
+    console.log('========================================================\n');
+    
+    if (!order.product) {
+      console.error('❌ ERROR: order.product is undefined!');
+    }
+    
+    const emailPayload = {
+      customerName: order.customerName,
+      email: order.email,
+      orderNumber: order.orderNumber,
+      productName: order.product?.name || 'Unknown Product',
+      quantity: order.quantity,
+      totalAmount: order.totalAmount,
+      status: validatedData.status,
+      address: order.address,
+      imageUrl: order.product?.image || '',
+    };
+    
+    console.log('📧 Email payload:', JSON.stringify(emailPayload, null, 2));
+    
     try {
-      await sendOrderStatusEmail(validatedData.status, {
-        customerName: order.customerName,
-        email: order.email,
-        orderNumber: order.orderNumber,
-        productName: order.product.name,
-        quantity: order.quantity,
-        totalAmount: order.totalAmount,
-        status: validatedData.status,
-        address: order.address,
-      });
-      console.log('✅ Email sent successfully');
+      console.log('📧 Calling sendOrderStatusEmail...');
+      await sendOrderStatusEmail(validatedData.status, emailPayload);
+      console.log('✅ Email function completed successfully');
     } catch (emailError) {
-      console.error('❌ Email notification failed:', emailError);
+      console.error('❌ Email notification failed:');
+      console.error(emailError);
+      if (emailError && typeof emailError === 'object') {
+        console.error('Error JSON:', JSON.stringify(emailError, null, 2));
+      }
       // Continue even if email fails
     }
 

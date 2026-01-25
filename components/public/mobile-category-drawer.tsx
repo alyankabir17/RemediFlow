@@ -20,14 +20,14 @@ export function MobileCategoryDrawer() {
         <SheetHeader className="p-6 pb-4">
           <SheetTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5 text-blue-600" />
-            Filter by Category
+            Categories
           </SheetTitle>
           <SheetDescription>
             Browse products by category
           </SheetDescription>
         </SheetHeader>
         <div className="px-4 pb-6">
-          <CategorySidebar />
+          <CategorySidebar showHeader={false} />
         </div>
       </SheetContent>
     </Sheet>

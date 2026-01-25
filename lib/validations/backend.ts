@@ -42,7 +42,11 @@ export const createProductSchema = z.object({
   purchasePrice: z.number().positive(),
   isHot: z.boolean().optional().default(false),
   isBestSeller: z.boolean().optional().default(false),
-  image: z.string().url(),
+  isActive: z.boolean().optional().default(true),
+  image: z.string().min(1).refine(
+    (val) => val.startsWith('http://') || val.startsWith('https://') || val.startsWith('data:image/'),
+    'Must be a valid URL or uploaded image'
+  ),
 });
 
 export const updateProductSchema = createProductSchema.partial().extend({
@@ -110,7 +114,7 @@ export type CreateSaleInput = z.infer<typeof createSaleSchema>;
 
 export const paginationSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(10),
+  limit: z.coerce.number().int().positive().max(1000).default(10),
 });
 
 export const productQuerySchema = paginationSchema.extend({

@@ -42,6 +42,7 @@ interface OrderEmailData {
   totalAmount: number;
   status: string;
   address?: string;
+  imageUrl?: string; // Optional product image used by email template
 }
 
 /**
@@ -60,6 +61,7 @@ export async function sendOrderConfirmedEmail(data: OrderEmailData): Promise<voi
         name: data.productName,
         units: data.quantity,
         price: data.totalAmount.toFixed(2),
+        image_url: data.imageUrl || '',
       }
     ],
     cost: {
@@ -109,6 +111,7 @@ export async function sendOrderCancelledEmail(data: OrderEmailData): Promise<voi
             name: data.productName,
             units: data.quantity,
             price: data.totalAmount.toFixed(2),
+            image_url: data.imageUrl || '',
           }
         ],
         cost: {
@@ -145,6 +148,7 @@ export async function sendOrderShippedEmail(data: OrderEmailData): Promise<void>
             name: data.productName,
             units: data.quantity,
             price: data.totalAmount.toFixed(2),
+            image_url: data.imageUrl || '',
           }
         ],
         cost: {
@@ -181,6 +185,7 @@ export async function sendOrderDeliveredEmail(data: OrderEmailData): Promise<voi
             name: data.productName,
             units: data.quantity,
             price: data.totalAmount.toFixed(2),
+            image_url: data.imageUrl || '',
           }
         ],
         cost: {
@@ -208,31 +213,55 @@ export async function sendOrderStatusEmail(
   status: string,
   orderData: OrderEmailData
 ): Promise<void> {
+  console.log('\n========== EMAIL SERVICE DEBUG ==========');
+  console.log('📧 sendOrderStatusEmail called with:');
+  console.log('   Status:', status);
+  console.log('   Order Data:', JSON.stringify(orderData, null, 2));
+  console.log('   Service ID:', EMAILJS_SERVICE_ID ? `Set (${EMAILJS_SERVICE_ID.substring(0, 10)}...)` : '❌ MISSING');
+  console.log('   Public Key:', EMAILJS_PUBLIC_KEY ? `Set (${EMAILJS_PUBLIC_KEY.substring(0, 10)}...)` : '❌ MISSING');
+  console.log('   Private Key:', EMAILJS_PRIVATE_KEY ? 'Set (hidden)' : '❌ MISSING');
+  console.log('==========================================\n');
+
   // Skip if EmailJS is not configured
   if (!EMAILJS_SERVICE_ID || !EMAILJS_PUBLIC_KEY) {
     console.warn('⚠️ EmailJS not configured. Skipping email notification.');
+    console.warn('   EMAILJS_SERVICE_ID:', EMAILJS_SERVICE_ID || 'NOT SET');
+    console.warn('   EMAILJS_PUBLIC_KEY:', EMAILJS_PUBLIC_KEY || 'NOT SET');
     return;
   }
 
   try {
+    console.log(`📧 Processing status: ${status.toUpperCase()}`);
     switch (status.toUpperCase()) {
       case 'CONFIRMED':
+        console.log('📧 Calling sendOrderConfirmedEmail...');
         await sendOrderConfirmedEmail(orderData);
+        console.log('📧 sendOrderConfirmedEmail completed');
         break;
       case 'CANCELLED':
+        console.log('📧 Calling sendOrderCancelledEmail...');
         await sendOrderCancelledEmail(orderData);
+        console.log('📧 sendOrderCancelledEmail completed');
         break;
       case 'SHIPPED':
+        console.log('📧 Calling sendOrderShippedEmail...');
         await sendOrderShippedEmail(orderData);
+        console.log('📧 sendOrderShippedEmail completed');
         break;
       case 'DELIVERED':
+        console.log('📧 Calling sendOrderDeliveredEmail...');
         await sendOrderDeliveredEmail(orderData);
+        console.log('📧 sendOrderDeliveredEmail completed');
         break;
       default:
         console.log(`ℹ️ No email template configured for status: ${status}`);
     }
   } catch (error) {
+    console.error('\n❌❌❌ EMAIL SEND FAILED ❌❌❌');
     console.error('Failed to send order status email:', error);
+    if (error && typeof error === 'object') {
+      console.error('Error details:', JSON.stringify(error, null, 2));
+    }
     // Don't throw error - email failure shouldn't block order update
   }
 }

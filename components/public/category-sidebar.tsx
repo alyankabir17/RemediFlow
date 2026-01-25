@@ -18,9 +18,10 @@ interface Category {
 
 interface CategorySidebarProps {
   className?: string;
+  showHeader?: boolean;
 }
 
-export function CategorySidebar({ className }: CategorySidebarProps) {
+export function CategorySidebar({ className, showHeader = true }: CategorySidebarProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -75,23 +76,25 @@ export function CategorySidebar({ className }: CategorySidebarProps) {
 
   return (
     <div className={cn('w-full', className)}>
-      <div className="bg-white border rounded-lg p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <FolderOpen className="h-5 w-5 text-blue-600" />
-            Categories
-          </h3>
-          {selectedCategoryId && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={clearFilter}
-              className="h-6 w-6"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+      <div className={cn(showHeader && 'bg-white border rounded-lg p-4')}>
+        {showHeader && (
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <FolderOpen className="h-5 w-5 text-blue-600" />
+              Categories
+            </h3>
+            {selectedCategoryId && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={clearFilter}
+                className="h-6 w-6"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        )}
 
         {loading ? (
           <div className="flex justify-center py-8">

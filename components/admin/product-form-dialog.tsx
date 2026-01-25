@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -29,10 +29,11 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Product } from '@/lib/types';
 import { productFormSchema, ProductFormValues } from '@/lib/validations';
 import { adminProductApi } from '@/lib/api';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload, Link, Image as ImageIcon, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Category {
@@ -75,6 +76,7 @@ export function ProductFormDialog({
       purchasePrice: 0,
       isHot: false,
       isBestSeller: false,
+      isActive: true,
     },
   });
 
@@ -121,6 +123,7 @@ export function ProductFormDialog({
         purchasePrice: product.purchasePrice,
         isHot: product.isHot,
         isBestSeller: product.isBestSeller,
+        isActive: product.isActive,
       });
     } else {
       form.reset({
@@ -137,6 +140,7 @@ export function ProductFormDialog({
         purchasePrice: 0,
         isHot: false,
         isBestSeller: false,
+        isActive: true,
       });
     }
   }, [product, form]);
@@ -338,10 +342,68 @@ export function ProductFormDialog({
               name="image"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Image URL *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://example.com/image.jpg" {...field} />
-                  </FormControl>
+                  <FormLabel>Product Image *</FormLabel>
+                  <Tabs defaultValue="url" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="url" className="flex items-center gap-2">
+                        <Link className="h-4 w-4" />
+                        URL
+                      </TabsTrigger>
+                      <TabsTrigger value="upload" className="flex items-center gap-2">
+                        <Upload className="h-4 w-4" />
+                        Upload
+                      </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="url" className="mt-2">
+                      <FormControl>
+                        <Input 
+                          placeholder="https://example.com/image.jpg" 
+                          {...field} 
+                        />
+                      </FormControl>
+                    </TabsContent>
+                    <TabsContent value="upload" className="mt-2">
+                      <div className="space-y-3">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              // Convert to base64 data URL for local preview and storage
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                field.onChange(reader.result as string);
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                        <p className="text-xs text-gray-500">
+                          Supports: JPG, PNG, GIF, WebP, BMP, SVG (max 5MB)
+                        </p>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                  {field.value && (
+                    <div className="mt-3 relative inline-block">
+                      <img 
+                        src={field.value} 
+                        alt="Preview" 
+                        className="h-24 w-24 object-cover rounded-lg border"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/96?text=Invalid';
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => field.onChange('')}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -423,6 +485,24 @@ export function ProductFormDialog({
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel>⭐ Best Seller</FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="isActive"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>✅ In Stock</FormLabel>
                     </div>
                   </FormItem>
                 )}

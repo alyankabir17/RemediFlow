@@ -23,11 +23,15 @@ export const productFormSchema = z.object({
   manufacturer: z.string().min(1, 'Manufacturer is required').max(200),
   batchNumber: z.string().max(100).optional(),
   expiryDate: z.string().optional().transform(val => val === '' ? undefined : val),
-  image: z.string().url('Must be a valid URL'),
+  image: z.string().min(1, 'Image is required').refine(
+    (val) => val.startsWith('http://') || val.startsWith('https://') || val.startsWith('data:image/'),
+    'Must be a valid URL or uploaded image'
+  ),
   sellingPrice: z.number().min(0.01, 'Selling price must be greater than 0'),
   purchasePrice: z.number().min(0.01, 'Purchase price must be greater than 0'),
   isHot: z.boolean().optional(),
   isBestSeller: z.boolean().optional(),
+  isActive: z.boolean().optional(),
 });
 
 export type ProductFormValues = z.infer<typeof productFormSchema>;

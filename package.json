@@ -88,6 +88,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "dotenv": "^17.2.3",
     "prisma": "^5.22.0"
   }
 }
